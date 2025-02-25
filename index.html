@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Cream Shop - Pay with PayPal or Card</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts (Poppins) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- PayPal SDK with Your Client ID -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AZWBIwZj1T40oVSTsfddoHzNp_nc4rklvj90lc3PCXWg4Zr0-RPhFgM-o32hVmv5hHI0_3pyqf7Qfsls&currency=USD&components=buttons"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center">
+    <div class="container mx-auto p-6 max-w-4xl">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">
+            <i class="fa-solid fa-ice-cream text-pink-500 mr-2"></i> Ice Cream Shop
+        </h1>
+
+        <!-- Ice Cream List -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <i class="fa-solid fa-ice-cream text-yellow-400 text-3xl mb-4"></i>
+                <h2 class="text-xl font-semibold text-gray-700">Vanilla Delight</h2>
+                <p class="text-gray-500">$1.00</p>
+                <button class="add-to-cart mt-4 bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600" data-price="1.00" data-name="Vanilla Delight">
+                    Add to Cart
+                </button>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <i class="fa-solid fa-ice-cream text-brown-600 text-3xl mb-4"></i>
+                <h2 class="text-xl font-semibold text-gray-700">Choco Blast</h2>
+                <p class="text-gray-500">$2.00</p>
+                <button class="add-to-cart mt-4 bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600" data-price="2.00" data-name="Choco Blast">
+                    Add to Cart
+                </button>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <i class="fa-solid fa-ice-cream text-red-400 text-3xl mb-4"></i>
+                <h2 class="text-xl font-semibold text-gray-700">Strawberry Dream</h2>
+                <p class="text-gray-500">$3.00</p>
+                <button class="add-to-cart mt-4 bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600" data-price="3.00" data-name="Strawberry Dream">
+                    Add to Cart
+                </button>
+            </div>
+        </div>
+
+        <!-- Checkout Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Cart</h2>
+            <p id="cart-total" class="text-lg text-gray-600 mb-4">Total: $0.00</p>
+            <ul id="cart-items" class="text-left text-gray-700 mb-4"></ul>
+            
+            <!-- User Info Form -->
+            <div id="user-form" class="hidden mb-4">
+                <input type="text" id="name" placeholder="Your Name" required>
+                <input type="tel" id="phone" placeholder="Phone Number" required>
+                <textarea id="message" placeholder="Your Message (e.g., delivery instructions)" rows="3"></textarea>
+            </div>
+            
+            <div id="paypal-button-container" class="mt-4 hidden"></div>
+            <p id="payment-message" class="mt-4 text-green-600 hidden">Thank you for your purchase! We’ll process your order soon.</p>
+        </div>
+    </div>
+
+    <script>
+        let totalAmount = 0;
+        let cartItems = [];
+
+        // Add to Cart Functionality
+        $('.add-to-cart').click(function() {
+            const price = parseFloat($(this).data('price'));
+            const itemName = $(this).data('name');
+            totalAmount += price;
+            cartItems.push(itemName);
+
+            // Update Cart Display
+            $('#cart-total').text(`Total: $${totalAmount.toFixed(2)}`);
+            $('#cart-items').empty();
+            cartItems.forEach(item => {
+                $('#cart-items').append(`<li>${item}</li>`);
+            });
+
+            // Show Form and PayPal Button
+            $('#user-form').removeClass('hidden');
+            $('#paypal-button-container').removeClass('hidden');
+        });
+
+        // PayPal Payment Integration
+        paypal.Buttons({
+            style: {
+                shape: 'rect',
+                color: 'gold',
+                layout: 'vertical',
+                label: 'paypal'
+            },
+            createOrder: function(data, actions) {
+                if (totalAmount === 0) {
+                    alert('Please add an ice cream to your cart!');
+                    return;
+                }
+                const name = $('#name').val();
+                const phone = $('#phone').val();
+                const message = $('#message').val();
+
+                if (!name || !phone) {
+                    alert('Please enter your name and phone number!');
+                    return;
+                }
+
+                const description = `Order: ${cartItems.join(', ')} | Name: ${name} | Phone: ${phone} | Message: ${message || 'None'}`;
+
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            currency_code: 'USD',
+                            value: totalAmount.toFixed(2)
+                        },
+                        description: description.slice(0, 127) // PayPal limits description to 127 characters
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    $('#payment-message').removeClass('hidden');
+                    $('#paypal-button-container').addClass('hidden');
+                    $('#user-form').addClass('hidden');
+                    $('#cart-total').text('Total: $0.00');
+                    $('#cart-items').empty();
+                    $('#name').val('');
+                    $('#phone').val('');
+                    $('#message').val('');
+                    totalAmount = 0;
+                    cartItems = [];
+                    console.log('Payment completed:', details);
+                });
+            },
+            onError: function(err) {
+                console.error('Payment error:', err);
+                alert('An error occurred during payment. Please try again.');
+            }
+        }).render('#paypal-button-container');
+    </script>
+</body>
+</html>
